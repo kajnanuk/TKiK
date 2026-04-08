@@ -9,7 +9,6 @@ STYLES = {
     "RPAREN": "color: gray;"
 }
 
-
 def highlight(tokens):
     html = ""
     for token in tokens:
