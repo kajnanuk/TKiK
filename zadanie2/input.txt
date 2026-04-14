@@ -1,1 +1,13 @@
-2+3*(76+8/3)+ 3*(9-3)
+( promien_kola * promien_kola ) * 314
+    
+    obwod / ( 2 * 314 )
+
+suma_calkowita +
+    ( podatek_vat * 23 ) / 100
+    
+   1000 - 
+( rabat / 2 ) + 8
+
+      zlozona_operacja_123 + (
+          x_1 * y_2
+      ) - 0
