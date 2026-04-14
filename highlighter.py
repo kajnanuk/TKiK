@@ -1,18 +1,23 @@
 import html as html_lib
-
-STYLES = {
-    "ID": "color: blue; font-weight: bold;",
-    "NUMBER": "color: red;",
-    "PLUS": "color: purple;",
-    "MINUS": "color: purple;",
-    "MUL": "color: purple;",
-    "DIV": "color: purple;",
-    "LPAREN": "color: gray;",
-    "RPAREN": "color: gray;"
-}
+import json
+import os
 
 
-def highlight(oryginalny_tekst, tokens):
+def load_theme(file_path="styles.json"):
+    """Wczytuje motyw z pliku JSON. Zwraca pusty schemat w razie braku pliku."""
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"styles": {}, "token_mapping": {}}
+
+
+def highlight(oryginalny_tekst, tokens, theme_file="styles.json"):
+    theme = load_theme(theme_file)
+    styles = theme.get("styles", {})
+    mapping = theme.get("token_mapping", {})
+
+    default_style = styles.get("DEFAULT", "color: black;")
+
     html_output = ""
     ostatnia_pozycja = 0
 
@@ -20,24 +25,24 @@ def highlight(oryginalny_tekst, tokens):
         if token.kod == 'EOF':
             break
 
-        # Kolumna w skanerze jest liczona od 1, więc odejmujemy 1 by mieć indeks
         start_idx = token.kolumna - 1
 
-        # 1. Dodajemy tekst pomiędzy poprzednim tokenem a obecnym (białe znaki)
+        # 1. Dodajemy tekst pomiędzy tokenami (białe znaki)
         pominiete_znaki = oryginalny_tekst[ostatnia_pozycja:start_idx]
         html_output += html_lib.escape(pominiete_znaki)
 
-        # 2. Tworzymy ostylowany span dla samego tokenu
+        # 2. Mapowanie: Token -> Grupa -> Styl CSS
+        # Jeśli token nie ma przypisanej grupy, dostanie tag "DEFAULT"
+        grupa_tokenu = mapping.get(token.kod, "DEFAULT")
+        style = styles.get(grupa_tokenu, default_style)
+
         wartosc = html_lib.escape(token.wartosc)
-        style = STYLES.get(token.kod, "color: black;")
         html_output += f'<span style="{style}">{wartosc}</span>'
 
-        # 3. Aktualizujemy wskaźnik pozycji
         ostatnia_pozycja = start_idx + len(token.wartosc)
 
-    # 4. Dodajemy ewentualne białe znaki na samym końcu pliku
+    # 3. Reszta tekstu na końcu
     html_output += html_lib.escape(oryginalny_tekst[ostatnia_pozycja:])
-
     return html_output
 
 
@@ -46,13 +51,13 @@ def wrap_html(content):
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Syntax Highlight</title>
+<title>Grupy Składniowe - Highlight</title>
 <style>
-    body {{ font-family: monospace; background-color: #f5f5f5; padding: 20px; }}
-    pre {{ background-color: white; padding: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }}
+    body {{ font-family: 'Consolas', 'Monaco', monospace; background-color: #ecf0f1; padding: 40px; }}
+    pre {{ background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #bdc3c7; line-height: 1.5; font-size: 15px; }}
 </style>
 </head>
 <body>
-<pre>{content}</pre>
+    <pre>{content}</pre>
 </body>
 </html>"""
