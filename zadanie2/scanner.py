@@ -2,9 +2,9 @@ class Token:
     """Struktura przechowująca informacje o rozpoznanym tokenie."""
 
     def __init__(self, kod, wartosc, kolumna):
-        self.kod = kod  # kod tokenu 'NUMBER', 'PLUS'
-        self.wartosc = wartosc  # wartosc tokenu '76', '+'
-        self.kolumna = kolumna  # pozycja rozpoczecia tokenu
+        self.kod = kod  # kod tokenu 'NUMBER', 'PLUS' itp.
+        self.wartosc = wartosc  # wartosc tokenu '76', '+' itp.
+        self.kolumna = kolumna  # pozycja rozpoczecia tokenu (1-based)
 
     def __repr__(self):
         return f"Token(kod='{self.kod:6}', atrybut='{self.wartosc:2}', kolumna={self.kolumna})"
@@ -25,7 +25,7 @@ class AnalizatorLeksykalny:
             self.biezacy_znak = self.tekst[self.pozycja]
 
     def pomijaj_biale_znaki(self):
-        """Pomijanie znaków białych."""
+        """Pomijanie znaków białych (spacje, tabulatory, znaki nowej linii)."""
         while self.biezacy_znak is not None and self.biezacy_znak.isspace():
             self.idz_dalej()
 
@@ -42,8 +42,8 @@ class AnalizatorLeksykalny:
         """Rozpoznaje token wielowartościowy: Identyfikator (zmienna)."""
         wynik = ''
         start_kolumna = self.pozycja + 1
-        # najpierw litera, potem cyfry lub litery
-        while self.biezacy_znak is not None and self.biezacy_znak.isalnum():
+        # pierwsza litera lub _, potem litery, cyfry lub _
+        while self.biezacy_znak is not None and (self.biezacy_znak.isalnum() or self.biezacy_znak == '_'):
             wynik += self.biezacy_znak
             self.idz_dalej()
         return Token('ID', wynik, start_kolumna)
@@ -51,7 +51,6 @@ class AnalizatorLeksykalny:
     def skaner(self):
         """
         Główna funkcja skanera. Wywoływana w pętli zwraca kolejny token.
-        Działa jak maszyna stanów bazująca na bieżącym znaku.
         """
         while self.biezacy_znak is not None:
 
@@ -60,15 +59,15 @@ class AnalizatorLeksykalny:
                 self.pomijaj_biale_znaki()
                 continue
 
-            # zapamietujemy kolumne (+1 dla czeytelnosci)
+            # zapamietujemy kolumne (+1 dla czytelnosci)
             kolumna = self.pozycja + 1
 
             # 2. rozpoznawanie liczb
             if self.biezacy_znak.isdigit():
                 return self.skanuj_liczbe()
 
-            # 3. rozpoznawanie identyfikatorow
-            if self.biezacy_znak.isalpha():
+            # 3. rozpoznawanie identyfikatorow (zgodnie z regex [a-zA-Z_]...)
+            if self.biezacy_znak.isalpha() or self.biezacy_znak == '_':
                 return self.skanuj_identyfikator()
 
             # 4. tokeny jednowartosciowe
@@ -93,11 +92,9 @@ class AnalizatorLeksykalny:
                 return Token('RPAREN', znak, kolumna)
 
             # 5. Obsluga bledow leksykalnych
-            # jesli nie pasuje do zadnej reguly, zglaszamy blad
             bledny_znak = self.biezacy_znak
             blad_kolumna = self.pozycja + 1
-            self.idz_dalej()  # idziemy dalej
+            self.idz_dalej()
             raise ValueError(f"Blad leksykalny: nierozpoznany znak: '{bledny_znak}'; kolumna: {blad_kolumna}")
 
-        # zwracamy token konca pliku
         return Token('EOF', '', self.pozycja + 1)
